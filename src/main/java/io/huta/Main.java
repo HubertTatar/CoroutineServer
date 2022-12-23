@@ -33,6 +33,7 @@ public class Main {
             exchange.close();
         });
         server.start();
+        LOG.info("Http listening on port 8080");
 
         PrometheusMeterRegistry registry = Metrics.createRegistry();
         HttpServer prometheus = Server.createHttpServer(8081, executorService);
@@ -45,6 +46,7 @@ public class Main {
             responseBody.close();
         });
         prometheus.start();
+        LOG.info("Prometheus metrics on port 8081");
 
         // hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

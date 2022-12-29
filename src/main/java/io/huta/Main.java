@@ -1,5 +1,6 @@
 package io.huta;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
@@ -44,7 +45,9 @@ public class Main {
             exchange.close();
         });
 
-        HttpContext context = server.createContext("/test", new TestHandler());
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpContext context = server.createContext("/test", new TestHandler(mapper));
         context.getFilters().add(new Filter() {
             @Override
             public void doFilter(HttpExchange exchange, Chain chain) throws IOException {

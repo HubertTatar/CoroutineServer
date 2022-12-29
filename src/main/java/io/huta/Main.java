@@ -1,6 +1,7 @@
 package io.huta;
 
 import com.sun.net.httpserver.HttpServer;
+import io.huta.infra.Config;
 import io.huta.infra.Metrics;
 import io.huta.infra.Server;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -12,6 +13,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -24,10 +26,11 @@ public class Main {
             System.exit(1);
         });
 
-        // load config from file
-        ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+        Config config = Config.load("app.properties");
 
-        HttpServer server = Server.createHttpServer(8080, executorService);
+        ExecutorService executorService = Executors.newFixedThreadPool(10000, Thread.ofVirtual().factory());
+
+        HttpServer server = Server.createHttpServer(config.serverCfg().port(), executorService);
         server.createContext("/health", exchange -> {
             exchange.sendResponseHeaders(200, 0);
             exchange.close();
@@ -36,7 +39,7 @@ public class Main {
         LOG.info("Http listening on port 8080");
 
         PrometheusMeterRegistry registry = Metrics.createRegistry();
-        HttpServer prometheus = Server.createHttpServer(8081, executorService);
+        HttpServer prometheus = Server.createHttpServer(config.prometheusCfg().port(), executorService);
         prometheus.createContext("/metrics", exchange -> {
             var scraped = registry.scrape();
             exchange.sendResponseHeaders(200, scraped.length());
@@ -48,9 +51,13 @@ public class Main {
         prometheus.start();
         LOG.info("Prometheus metrics on port 8081");
 
-        // hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutdown hook - closing");
+            try {
+                executorService.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                LOG.error("Error during shutdown");
+            }
             prometheus.stop(10);
             server.stop(10);
         }));

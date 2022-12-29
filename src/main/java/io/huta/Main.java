@@ -34,9 +34,8 @@ public class Main {
 
         Config config = Config.load("app.properties");
 
-        ThreadFactory threadFactory = Thread.ofVirtual().uncaughtExceptionHandler((t, e) ->
-                LOG.error("Virtual Uncaught Exception", e)
-        ).factory();
+        ThreadFactory threadFactory = Thread.ofVirtual()
+                .uncaughtExceptionHandler((t, e) -> LOG.error("Virtual Uncaught Exception", e)).factory();
         ExecutorService executorService = Executors.newFixedThreadPool(10000, threadFactory);
 
         HttpServer server = Server.createHttpServer(config.serverCfg().port(), executorService);

@@ -23,13 +23,8 @@ public class TestHandler extends AbstractHandler {
         TestRequestDto req = deserialize(exchange, TestRequestDto.class);
         LOG.info(req.toString());
 
-        String resp = serialize(new TestResponseDto(
-                UUID.randomUUID(),
-                req.field(),
-                req.field2(),
-                req.field3(),
-                req.field4()
-        ));
+        String resp = serialize(
+                new TestResponseDto(UUID.randomUUID(), req.field(), req.field2(), req.field3(), req.field4()));
 
         writeResp(resp, exchange);
     }
